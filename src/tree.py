@@ -79,7 +79,10 @@ class Tree():
             new_tr_set = tr_set[tr_set[max_attr] == value].drop(max_attr, axis=1)
             new_cat = tr_set[self.cat_col_name].mode()[0] if len(tr_set) != 0 else cur_node.cat
             new_node = Node(cat=new_cat)
-            self._set_cat_prob(new_node, new_tr_set)
+            if len(new_tr_set) != 0:
+                self._set_cat_prob(new_node, new_tr_set)
+            else:
+                new_node.set_prob(cur_node.get_prob())
             cur_node.add_child(value, new_node, new_tr_set)
         return new_attributes
 
@@ -102,7 +105,7 @@ class Tree():
         if len(cur_node.children) == 0:
             print(f"{' ' * depth}{cur_node.cat}, {cur_node.get_prob()}")
         else:
-            print(f"{' ' * depth}{cur_node.attribute}")
+            print(f"{' ' * depth}{cur_node.attribute}, {cur_node.get_prob()}")
             for attr, child, _ in cur_node.children:
                 print(f"{' ' * (depth+1)}{attr}", end=" ")
                 self._print_tree(child, depth+1)
