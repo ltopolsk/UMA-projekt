@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import json
 
 
 class Node():
@@ -24,9 +25,10 @@ class Node():
 
 class Tree():
 
-    def __init__(self, training_set: pd.DataFrame, attributes: pd.Index, cat_col_name):
+    def __init__(self, training_set: pd.DataFrame, attributes: pd.Index, avaible_vals: dict, cat_col_name):
         self.tr_set = training_set
         self.attributes = attributes
+        self.avaible_vals = avaible_vals
         self.cat_col_name = cat_col_name
         self.root = Node(cat=training_set[cat_col_name].mode()[0])
         self.build_tree()
@@ -34,16 +36,19 @@ class Tree():
     def build_tree(self):
         # print(attributes)
         new_attributes = self._get_split(self.tr_set, self.root, self.attributes)
-        for value, new_node, new_tr_set in self.root.children:
+        for _, new_node, new_tr_set in self.root.children:
             self._build_tree(new_tr_set, new_attributes, new_node)
 
     def _build_tree(self, tr_set: pd.DataFrame, attributes: pd.Index, cur_node: Node):
         if len(tr_set) == 0:
+            print("empty set")
             return
         if len(tr_set[self.cat_col_name].value_counts()) == 1:
+            print("one class")
             cur_node.set_cat(tr_set[self.cat_col_name].to_numpy()[0])
             return
         if len(attributes) == 0:
+            print("no attrbs")
             cur_node.set_cat(tr_set[self.cat_col_name].mode()[0])
             return
 
@@ -51,18 +56,18 @@ class Tree():
         for _, new_node, new_tr_set in cur_node.children:
             self._build_tree(new_tr_set, new_attributes, new_node)
 
-    def _get_split(self, tr_set: pd.DataFrame, cur_node: Node, attributes: pd.Index):
+    def _get_split(self, tr_set: pd.DataFrame, cur_node: Node, attributes: pd.Index) -> pd.Index:
         max_attr = self._max_inf_gain(tr_set, self.cat_col_name, attributes)
         cur_node.set_attribute(max_attr)
         new_attributes = attributes.drop(max_attr)
-        for value in tr_set[max_attr].unique():
+        for value in self.avaible_vals[max_attr]:
             new_tr_set = tr_set[tr_set[max_attr] == value].drop(max_attr, axis=1)
             new_cat = tr_set[self.cat_col_name].mode()[0] if len(tr_set) != 0 else cur_node.cat
             new_node = Node(cat=new_cat)
             cur_node.add_child(value, new_node, new_tr_set)
         return new_attributes
 
-    def classify(self, object):
+    def classify(self, object: pd.Series):
         return self._classify(object, self.root)
 
     def _classify(self, object: pd.Series, cur_node: Node):
@@ -101,7 +106,7 @@ class Tree():
         split_info = np.sum([-counts/sum(col_counts) * np.log2(counts/sum(col_counts)) for counts in col_counts])
         return gain/split_info if split_info != 0.0 else gain
 
-    def _max_inf_gain(self, df: pd.DataFrame, cat_col_name, attributes):
+    def _max_inf_gain(self, df: pd.DataFrame, cat_col_name, attributes: pd.Index):
         inf_gains = [self._calc_inf_gain(df[column], df[cat_col_name]) for column in attributes]
         index = np.argmax(inf_gains)
         return attributes[index]
@@ -112,11 +117,14 @@ if __name__ == "__main__":
     df1 = df.iloc[:, [i for i in range(6)]]
     df1 = df1[0:1000]
     obj = df.iloc[1110]
+    file = open('avaible_values.json')
+    availbe_vals = json.load(file)
     tree = Tree(
         training_set=df1,
         attributes=df1.columns.drop("cat"),
-        cat_col_name="cat"
+        cat_col_name="cat",
+        avaible_vals=availbe_vals,
     )
 
-    # tree.print_tree()
-    print(tree.classify(obj), obj["cat"])
+    tree.print_tree()
+    # print(tree.classify(obj), obj["cat"])
