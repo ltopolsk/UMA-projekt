@@ -58,7 +58,7 @@
 	Disjunctive rules for poisonous mushrooms, from most general
 	to most specific:
 
-	P_1) odor=NOT(almond.OR.anise.OR.none)
+	P_1) odor=NOT(almond.OR.anise.OR.none)data/agaricus-lepiota.names
 	     120 poisonous cases missed, 98.52% accuracy
 
 	P_2) spore-print-color=green
