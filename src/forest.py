@@ -2,15 +2,17 @@ from tree import Tree
 import pandas as pd
 import numpy as np
 from statistics import mode
+import json
 
 
 class Forest():
 
-    def __init__(self, tr_set: pd.DataFrame, num_trees, num_train_ins, cat_col_name):
+    def __init__(self, tr_set: pd.DataFrame, num_trees, num_train_ins, cat_col_name, avaible_vals):
         self.tr_set = tr_set
         self.num_trees = num_trees
         self.num_train_ins = num_train_ins
         self.cat_col_name = cat_col_name
+        self.avaible_vals = avaible_vals
         self.trees = []
         self.create_forest()
 
@@ -24,21 +26,27 @@ class Forest():
                                             axis=1
                                         )
             attributes = sampled_temp_df.columns
-            self.trees.append(Tree(samples, attributes, self.cat_col_name))
+            self.trees.append(Tree(samples, attributes, self.avaible_vals, self.cat_col_name))
 
     def classify(self, obj):
         classes = []
         for tree in self.trees:
-            classes.append(tree.classify(obj))
-        return mode(classes)
+            cat, _ = tree.classify(obj)
+            classes.append(cat)
+        return mode(classes), (classes.count('e')/len(classes)) 
 
 
 if __name__ == "__main__":
     df = pd.read_csv('agaricus-lepiota.data')
+    file = open('avaible_values.json')
+    availbe_vals = json.load(file)
     forest = Forest(
                         tr_set=df,
                         num_trees=100,
-                        num_train_ins=2000,
-                        cat_col_name="cat"
+                        num_train_ins=5000,
+                        avaible_vals=availbe_vals,
+                        cat_col_name='cat'
                     )
-    print(forest.classify(df.iloc[10]))
+    cat, score = forest.classify(df.iloc[550])
+    print(cat)
+    print(score)
