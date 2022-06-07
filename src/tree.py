@@ -1,4 +1,3 @@
-from operator import sub
 import pandas as pd
 import numpy as np
 
@@ -18,7 +17,7 @@ class Node():
 
     def add_child(self, leading_branch, child, tr_set):
         self.children.append((leading_branch, child, tr_set))
-    
+
     def __str__(self) -> str:
         return f"attr={self.attribute}, cat={self.cat}, num_children={len(self.children)}"
 
@@ -52,7 +51,7 @@ class Tree():
         for _, new_node, new_tr_set in cur_node.children:
             self._build_tree(new_tr_set, new_attributes, new_node)
 
-    def _get_split(self, tr_set: pd.DataFrame, cur_node: Node, attributes):
+    def _get_split(self, tr_set: pd.DataFrame, cur_node: Node, attributes: pd.Index):
         max_attr = self._max_inf_gain(tr_set, self.cat_col_name, attributes)
         cur_node.set_attribute(max_attr)
         new_attributes = attributes.drop(max_attr)
@@ -109,7 +108,7 @@ class Tree():
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("agaricus-lepiota.data")
+    df = pd.read_csv('agaricus-lepiota.data')
     df1 = df.iloc[:, [i for i in range(6)]]
     df1 = df1[0:1000]
     obj = df.iloc[1110]
