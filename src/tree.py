@@ -5,10 +5,11 @@ import json
 
 class Node():
 
-    def __init__(self, attribute=None, cat=None):
+    def __init__(self, attribute=None, cat=None, cat_prob=None):
         self.children = []
         self.attribute = attribute
         self.cat = cat
+        self.cat_prob = cat_prob
 
     def set_attribute(self, attribute):
         self.attribute = attribute
@@ -18,6 +19,12 @@ class Node():
 
     def add_child(self, leading_branch, child, tr_set):
         self.children.append((leading_branch, child, tr_set))
+
+    def set_prob(self, val):
+        self.cat_prob = val
+
+    def get_prob(self):
+        return self.cat_prob
 
     def __str__(self) -> str:
         return f"attr={self.attribute}, cat={self.cat}, num_children={len(self.children)}"
@@ -31,7 +38,18 @@ class Tree():
         self.avaible_vals = avaible_vals
         self.cat_col_name = cat_col_name
         self.root = Node(cat=training_set[cat_col_name].mode()[0])
+        self._set_cat_prob(self.root, self.tr_set)
         self.build_tree()
+
+    def _set_cat_prob(self, node: Node, set: pd.DataFrame):
+        values = set[self.cat_col_name].value_counts()
+        if 'e' not in values.index:
+            node.set_prob(0.0)
+            return
+        if 'p' not in values.index:
+            node.set_prob(1.0)
+            return
+        node.set_prob(values['e']/(values['e']+values['p']))
 
     def build_tree(self):
         # print(attributes)
@@ -41,14 +59,11 @@ class Tree():
 
     def _build_tree(self, tr_set: pd.DataFrame, attributes: pd.Index, cur_node: Node):
         if len(tr_set) == 0:
-            print("empty set")
             return
         if len(tr_set[self.cat_col_name].value_counts()) == 1:
-            print("one class")
             cur_node.set_cat(tr_set[self.cat_col_name].to_numpy()[0])
             return
         if len(attributes) == 0:
-            print("no attrbs")
             cur_node.set_cat(tr_set[self.cat_col_name].mode()[0])
             return
 
@@ -64,6 +79,7 @@ class Tree():
             new_tr_set = tr_set[tr_set[max_attr] == value].drop(max_attr, axis=1)
             new_cat = tr_set[self.cat_col_name].mode()[0] if len(tr_set) != 0 else cur_node.cat
             new_node = Node(cat=new_cat)
+            self._set_cat_prob(new_node, new_tr_set)
             cur_node.add_child(value, new_node, new_tr_set)
         return new_attributes
 
@@ -72,7 +88,7 @@ class Tree():
 
     def _classify(self, object: pd.Series, cur_node: Node):
         if len(cur_node.children) == 0:
-            return cur_node.cat
+            return cur_node.cat, cur_node.get_prob()
         for value, child, _ in cur_node.children:
             if value == object[cur_node.attribute]:
                 next_child = child
@@ -84,7 +100,7 @@ class Tree():
 
     def _print_tree(self, cur_node: Node, depth=0):
         if len(cur_node.children) == 0:
-            print(f"{' ' * depth}{cur_node.cat}")
+            print(f"{' ' * depth}{cur_node.cat}, {cur_node.get_prob()}")
         else:
             print(f"{' ' * depth}{cur_node.attribute}")
             for attr, child, _ in cur_node.children:
@@ -114,9 +130,10 @@ class Tree():
 
 if __name__ == "__main__":
     df = pd.read_csv('agaricus-lepiota.data')
-    df1 = df.iloc[:, [i for i in range(6)]]
-    df1 = df1[0:1000]
-    obj = df.iloc[1110]
+    attrs_indexes = [0]+[i for i in range(8, 16)]
+    df1 = df.iloc[:, attrs_indexes]
+    df1 = df1[0:5000]
+    obj = df.iloc[6000]
     file = open('avaible_values.json')
     availbe_vals = json.load(file)
     tree = Tree(
@@ -127,4 +144,4 @@ if __name__ == "__main__":
     )
 
     tree.print_tree()
-    # print(tree.classify(obj), obj["cat"])
+    print(tree.classify(obj), obj["cat"])
