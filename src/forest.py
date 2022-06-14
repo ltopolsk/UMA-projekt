@@ -17,7 +17,6 @@ class Forest():
         self.create_forest()
 
     def create_forest(self):
-        print(len(self.tr_set))
         for _ in range(self.num_trees):
             samples = self.tr_set.sample(n=self.num_train_ins, replace=True)
             temp_df = self.tr_set.drop(self.cat_col_name, axis=1)
