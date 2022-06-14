@@ -76,7 +76,7 @@ if __name__ == "__main__":
     num_train_ins = (1000, 3000, 5000, 7000)
     for num_tree in num_trees:
         for num_ins in num_train_ins:
-            models = kfold_validate(x, y, (10, 3000), availbe_vals, 'cat', 3)
+            models = kfold_validate(x, y, (num_tree, num_ins), availbe_vals, 'cat', 3)
             for i, model in enumerate(models):
                 print(f'Model: {num_tree}_{num_ins}_{i}, Acc:{model["acc"]:.3f}, precision: {model["precision"]:.3f}, auc: {model["auc"]:.3f}')
                 plot_roc(model['fpr'], model['tpr'], model['auc'], f"../plots/model_{num_tree}_{num_ins}{i}.png")
