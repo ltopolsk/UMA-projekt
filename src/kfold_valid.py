@@ -67,12 +67,16 @@ def plot_roc(fpr, tpr, auc, fpath):
 
 if __name__ == "__main__":
     df = pd.read_csv('../data/agaricus-lepiota.data')
-    df.drop('s_r', axis=1, inplace=True)
+    df.drop(['s_r', 'v_t'], axis=1, inplace=True)
     y = df['cat']
     x = df.drop('cat', axis=1)
     file = open('../data/avaible_values.json')
     availbe_vals = json.load(file)
-    models = kfold_validate(x, y, (10, 3000), availbe_vals, 'cat', 3)
-    for i, model in enumerate(models):
-        print(f'Model: {i}, Acc:{model["acc"]:.3f}, precision: {model["precision"]:.3f}, auc: {model["auc"]:.3f}')
-        plot_roc(model['fpr'], model['tpr'], model['auc'], f"../plots/model_{i}.png")
+    num_trees = (10, 50, 1000)
+    num_train_ins = (1000, 3000, 5000, 7000)
+    for num_tree in num_trees:
+        for num_ins in num_train_ins:
+            models = kfold_validate(x, y, (10, 3000), availbe_vals, 'cat', 3)
+            for i, model in enumerate(models):
+                print(f'Model: {num_tree}_{num_ins}_{i}, Acc:{model["acc"]:.3f}, precision: {model["precision"]:.3f}, auc: {model["auc"]:.3f}')
+                plot_roc(model['fpr'], model['tpr'], model['auc'], f"../plots/model_{num_tree}_{num_ins}{i}.png")
